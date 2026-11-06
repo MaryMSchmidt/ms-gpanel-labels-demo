@@ -21,7 +21,7 @@ application-local.yaml
 # Backend: Java / Spring Boot / Maven
 # ==========================================================
 target/
-!.mvn/wrapper/maven-wrapper.jar
+**/.mvn/wrapper/maven-wrapper.jar
 *.class
 *.log
 hs_err_pid*
