@@ -24,4 +24,8 @@ public class LabelService {
         }
         return labels.stream().map(LabelResponse::from).toList();
     }
+
+    public LabelResponse get(String id) throws IOException {
+        return LabelResponse.from(gmail.users().labels().get(CURRENT_USER, id).execute());
+    }
 }
