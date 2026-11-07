@@ -28,4 +28,13 @@ public class LabelService {
     public LabelResponse get(String id) throws IOException {
         return LabelResponse.from(gmail.users().labels().get(CURRENT_USER, id).execute());
     }
+
+    public LabelResponse create(LabelRequest request) throws IOException {
+        // The Java client requires both visibility fields; these are Gmail's defaults.
+        Label label = new Label()
+                .setName(request.name().trim())
+                .setLabelListVisibility("labelShow")
+                .setMessageListVisibility("show");
+        return LabelResponse.from(gmail.users().labels().create(CURRENT_USER, label).execute());
+    }
 }

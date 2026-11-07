@@ -117,7 +117,7 @@ Google OAuth credentials are **never committed**. The backend reads the `credent
 - [x] Gmail API connection (credentials loaded from a local file or environment variable)
 - [x] List Gmail labels (`GET /api/labels`)
 - [x] Get a label by ID (`GET /api/labels/{id}`)
-- [ ] Create a label
+- [x] Create a label (`POST /api/labels`)
 - [ ] Update a label
 - [ ] Delete a label
 
@@ -126,7 +126,7 @@ Google OAuth credentials are **never committed**. The backend reads the `credent
 Required libraries: MUI, TanStack Query, React Router (v6/v7), React Hook Form.
 
 - [x] List labels in a DataGrid
-- [ ] Create a label
+- [x] Create a label
 - [ ] Update a label
 - [ ] Delete a label
 - [x] Navigate to a label detail route when a DataGrid row is clicked (`/labels/:id`)

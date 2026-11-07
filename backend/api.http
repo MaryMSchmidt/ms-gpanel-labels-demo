@@ -8,3 +8,15 @@ GET {{baseUrl}}/INBOX
 
 ### Get a label that doesn't exist (expect 404)
 GET {{baseUrl}}/not-a-real-id
+
+### Create a label (expect 201; run it twice to see 409)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{ "name": "API test label" }
+
+### Create with a blank name (expect 400)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{ "name": " " }
