@@ -1,9 +1,14 @@
 package com.maryschmidt.gpanel.labels.label;
 
+import jakarta.validation.Valid;
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,5 +30,11 @@ public class LabelController {
     @GetMapping("/{id}")
     public LabelResponse get(@PathVariable String id) throws IOException {
         return labelService.get(id);
+    }
+
+    @PostMapping
+    public ResponseEntity<LabelResponse> create(@Valid @RequestBody LabelRequest request) throws IOException {
+        LabelResponse created = labelService.create(request);
+        return ResponseEntity.created(URI.create("/api/labels/" + created.id())).body(created);
     }
 }

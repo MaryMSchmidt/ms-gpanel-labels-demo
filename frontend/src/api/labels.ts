@@ -15,8 +15,12 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(url: string): Promise<T> {
-  const response = await fetch(url)
+async function request<T>(url: string, method = 'GET', body?: unknown): Promise<T> {
+  const response = await fetch(url, {
+    method,
+    headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
   if (!response.ok) {
     const problem = await response.json().catch(() => null)
     throw new ApiError(response.status, problem?.detail ?? `Request failed (HTTP ${response.status})`)
@@ -30,4 +34,8 @@ export function fetchLabels(): Promise<Label[]> {
 
 export function fetchLabel(id: string): Promise<Label> {
   return request(`/api/labels/${encodeURIComponent(id)}`)
+}
+
+export function createLabel(name: string): Promise<Label> {
+  return request('/api/labels', 'POST', { name })
 }

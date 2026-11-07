@@ -1,7 +1,10 @@
 package com.maryschmidt.gpanel.labels.label;
 
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -13,6 +16,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -68,6 +72,34 @@ class LabelControllerTest {
         mockMvc.perform(get("/api/labels/Label_999"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Label not found."));
+    }
+
+    @Test
+    void createReturns201WithLocation() throws Exception {
+        when(labelService.create(new LabelRequest("Receipts"))).thenReturn(RECEIPTS);
+
+        mockMvc.perform(post("/api/labels").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Receipts\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", "/api/labels/Label_1"))
+                .andExpect(jsonPath("$.name").value("Receipts"));
+    }
+
+    @Test
+    void createReturns400WhenNameIsBlank() throws Exception {
+        mockMvc.perform(post("/api/labels").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"  \"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Name is required."));
+
+        verifyNoInteractions(labelService);
+    }
+
+    @Test
+    void createReturns409WhenNameExists() throws Exception {
+        when(labelService.create(new LabelRequest("Receipts"))).thenThrow(gmailError(409));
+
+        mockMvc.perform(post("/api/labels").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Receipts\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("A label with this name already exists."));
     }
 
     private static GoogleJsonResponseException gmailError(int status) {
