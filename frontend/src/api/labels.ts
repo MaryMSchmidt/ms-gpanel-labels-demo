@@ -6,10 +6,28 @@ export type Label = {
   labelListVisibility: string | null
 }
 
-export async function fetchLabels(): Promise<Label[]> {
-  const response = await fetch('/api/labels')
+export class ApiError extends Error {
+  status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
+}
+
+async function request<T>(url: string): Promise<T> {
+  const response = await fetch(url)
   if (!response.ok) {
-    throw new Error(`Could not load labels (HTTP ${response.status})`)
+    const problem = await response.json().catch(() => null)
+    throw new ApiError(response.status, problem?.detail ?? `Request failed (HTTP ${response.status})`)
   }
   return response.json()
+}
+
+export function fetchLabels(): Promise<Label[]> {
+  return request('/api/labels')
+}
+
+export function fetchLabel(id: string): Promise<Label> {
+  return request(`/api/labels/${encodeURIComponent(id)}`)
 }

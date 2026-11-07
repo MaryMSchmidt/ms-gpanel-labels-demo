@@ -2,6 +2,7 @@ import Alert from '@mui/material/Alert'
 import Container from '@mui/material/Container'
 import Typography from '@mui/material/Typography'
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
+import { useNavigate } from 'react-router'
 import type { Label } from '../api/labels'
 import { useLabels } from '../hooks/useLabels'
 
@@ -12,6 +13,7 @@ const columns: GridColDef<Label>[] = [
 
 function LabelsPage() {
   const { data, isPending, error } = useLabels()
+  const navigate = useNavigate()
 
   return (
     <Container sx={{ py: 4 }}>
@@ -21,7 +23,14 @@ function LabelsPage() {
       {error ? (
         <Alert severity="error">{error.message}</Alert>
       ) : (
-        <DataGrid rows={data ?? []} columns={columns} loading={isPending} autoHeight />
+        <DataGrid
+          rows={data ?? []}
+          columns={columns}
+          loading={isPending}
+          autoHeight
+          onRowClick={(params) => navigate(`/labels/${encodeURIComponent(params.row.id)}`)}
+          sx={{ '& .MuiDataGrid-row': { cursor: 'pointer' } }}
+        />
       )}
     </Container>
   )

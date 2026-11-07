@@ -1,2 +1,10 @@
+@baseUrl = http://localhost:8080/api/labels
+
 ### List labels
-GET http://localhost:8080/api/labels
+GET {{baseUrl}}
+
+### Get a label by id (INBOX always exists; use an id from the list for your own labels)
+GET {{baseUrl}}/INBOX
+
+### Get a label that doesn't exist (expect 404)
+GET {{baseUrl}}/not-a-real-id
