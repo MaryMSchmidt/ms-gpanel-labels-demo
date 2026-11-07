@@ -17,6 +17,10 @@ application-local.properties
 application-local.yml
 application-local.yaml
 
+# Personal working notes
+CLAUDE.md
+NOTES.md
+
 # ==========================================================
 # Backend: Java / Spring Boot / Maven
 # ==========================================================
