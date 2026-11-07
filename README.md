@@ -76,6 +76,8 @@ The sign-in is saved in `backend/tokens/` (never committed), so later runs start
 
 The backend runs on <http://localhost:8080>. Sign-in uses port 8888 for a moment, so both ports must be free.
 
+To call the API directly, open `backend/api.http` in VS Code with the REST Client extension and click **Send Request**.
+
 Run the tests (no Google account or credentials needed):
 
 ```bash
@@ -94,13 +96,15 @@ cd backend
 
 ### Frontend
 
+Start the backend first, then in a second terminal:
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Runs on <http://localhost:5173>.
+Open <http://localhost:5173>. The dev server forwards `/api` requests to the backend on port 8080, so no CORS setup is needed.
 
 ## Credentials and security
 
@@ -111,7 +115,7 @@ Google OAuth credentials are **never committed**. The backend reads the `credent
 ### Backend (Spring Boot)
 
 - [x] Gmail API connection (credentials loaded from a local file or environment variable)
-- [ ] List Gmail labels
+- [x] List Gmail labels (`GET /api/labels`)
 - [ ] Get a label by ID
 - [ ] Create a label
 - [ ] Update a label
@@ -121,7 +125,7 @@ Google OAuth credentials are **never committed**. The backend reads the `credent
 
 Required libraries: MUI, TanStack Query, React Router (v6/v7), React Hook Form.
 
-- [ ] List labels in a DataGrid
+- [x] List labels in a DataGrid
 - [ ] Create a label
 - [ ] Update a label
 - [ ] Delete a label

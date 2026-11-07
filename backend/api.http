@@ -1,0 +1,2 @@
+### List labels
+GET http://localhost:8080/api/labels
