@@ -21,7 +21,7 @@ ms-gpanel-labels-demo/
 | Tool  | Version         | Check            |
 |-------|-----------------|------------------|
 | Java  | 21 or newer     | `java -version`  |
-| Node  | 20.19+ or 22.12+ | `node -v`       |
+| Node  | 22.22 or newer  | `node -v`        |
 | Git   | any recent      | `git --version`  |
 
 Maven doesn't need to be installed. The backend uses the Maven Wrapper (`./mvnw`), which downloads the correct Maven version on first run.
@@ -78,13 +78,6 @@ The backend runs on <http://localhost:8080>. Sign-in uses port 8888 for a moment
 
 To call the API directly, open `backend/api.http` in VS Code with the REST Client extension and click **Send Request**.
 
-Run the tests (no Google account or credentials needed):
-
-```bash
-cd backend
-./mvnw test
-```
-
 #### Troubleshooting
 
 | Message | Fix |
@@ -105,6 +98,31 @@ npm run dev
 ```
 
 Open <http://localhost:5173>. The dev server forwards `/api` requests to the backend on port 8080, so no CORS setup is needed.
+
+## Tests
+
+The tests replace Gmail with a mock, so they need no Google account or credentials.
+
+**Backend** (JUnit, Mockito, MockMvc):
+
+```bash
+cd backend
+./mvnw verify
+```
+
+This runs the tests and measures line coverage with JaCoCo. The build fails below 75%. The report is at `backend/target/site/jacoco/index.html`. The Google sign-in in `GmailConfig` and the `main` method aren't covered, because they open a real browser; they're checked by hand every time the backend starts.
+
+**Frontend** (Vitest, React Testing Library):
+
+```bash
+cd frontend
+npm test
+npm run coverage
+```
+
+`npm test` runs the tests once. `npm run coverage` also measures coverage and fails below 75%; the report is at `frontend/coverage/index.html`. The page tests run the real components, hooks and API client against a small in-memory fake backend.
+
+**CI:** every pull request and every push to main runs both on GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): `./mvnw verify` for the backend, and lint, tests with coverage, and the build for the frontend.
 
 ## Credentials and security
 
