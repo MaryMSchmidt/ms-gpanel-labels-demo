@@ -1,9 +1,11 @@
+import { ThemeProvider } from '@mui/material/styles'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { vi } from 'vitest'
 import type { Label } from '../api/labels'
 import App from '../App'
+import { theme } from '../theme'
 
 export const inbox: Label = {
   id: 'INBOX',
@@ -62,7 +64,9 @@ export function renderApp(route: string) {
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[route]}>
-        <App />
+        <ThemeProvider theme={theme}>
+          <App />
+        </ThemeProvider>
       </MemoryRouter>
     </QueryClientProvider>,
   )

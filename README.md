@@ -8,7 +8,7 @@ React (MUI) frontend  ->  Spring Boot REST API  ->  Google Gmail API
 
 **What it does**
 
-- Lists the Gmail account's labels in a DataGrid. Clicking a row opens that label's detail page (`/labels/:id`).
+- Lists the Gmail account's labels in a DataGrid, user labels first. Clicking a row opens that label's detail page (`/labels/:id`).
 - Creates, renames and deletes user labels. System labels such as INBOX and SENT are read-only, as they are in Gmail.
 
 ## Project structure
@@ -19,7 +19,7 @@ ms-gpanel-labels-demo/
 ├── backend/                   Spring Boot 4 · Java 21 · Maven (wrapper included)
 │   ├── api.http               Ready-made requests for every endpoint
 │   └── src/main/java/com/maryschmidt/gpanel/labels/
-│       ├── config/            Gmail client and Google sign-in
+│       ├── config/            Gmail client, Google sign-in and the Gmail health check
 │       ├── label/             Controller, service, request and response records
 │       └── error/             Turns Gmail and validation errors into JSON responses
 └── frontend/                  React 19 · TypeScript · Vite · MUI
@@ -83,12 +83,14 @@ The variable lasts only for that terminal session, so set it again in a new term
 **First run:** a browser opens to Google sign-in.
 
 1. Sign in with your test Gmail account.
-2. Google shows "Google hasn't verified this app". This is expected for an app in Testing mode: click **Advanced**, then **Continue**.
-3. Click **Allow**. The browser confirms sign-in, and the backend finishes starting.
+2. Google shows "Google hasn't verified this app", with a note that you've been given access to it. This is expected for an app in Testing mode: click **Continue**.
+3. Google shows that the app will only be able to manage your Gmail labels. Click **Continue**. The browser confirms sign-in, and the backend finishes starting.
 
 The sign-in is saved in `backend/tokens/` (never committed), so later runs start without signing in. To sign in again or switch accounts, stop the backend and delete `backend/tokens/`.
 
 The backend runs on <http://localhost:8080>. Sign-in uses port 8888 for a moment, so both ports must be free.
+
+To check it's working, open <http://localhost:8080/actuator/health>. It shows `UP` when the backend is running and can reach Gmail.
 
 To call the API directly, open `backend/api.http` in VS Code with the REST Client extension and click **Send Request**.
 
@@ -126,6 +128,8 @@ All endpoints are under `/api/labels`. `POST` and `PATCH` take a JSON body: `{ "
 | `DELETE` | `/api/labels/{id}` | 204, no body | 400 system label, 404 unknown id |
 
 Every error is a JSON [Problem Detail](https://www.rfc-editor.org/rfc/rfc9457) with a readable `detail` message. Any endpoint can also return 429 when Gmail is rate limiting, or 502 when Gmail fails or can't be reached.
+
+**Health check:** `GET /actuator/health` returns 200 with `"status": "UP"` when the app is running and Gmail answers, or 503 with `DOWN`. The `gmail` entry shows the Gmail check on its own; for example, it goes `DOWN` when the saved sign-in expires.
 
 ## Tests
 
@@ -165,6 +169,7 @@ npm run coverage
 - **Predictable data on screen.** TanStack Query caches the list (`['labels']`) and each label (`['labels', id]`). Every change refreshes the list, so all screens stay in sync. 4xx errors aren't retried, because they won't fix themselves; server and network errors retry up to three times.
 - **One form for create and edit.** `LabelFormDialog` holds the form and its validation. `CreateLabelDialog` and `EditLabelDialog` only supply the title, the starting name and what Save does.
 - **A Vite proxy instead of CORS.** In development the browser only talks to `localhost:5173`, which forwards `/api` to the backend, so the backend needs no CORS setup.
+- **A health check that includes Gmail.** Spring Boot Actuator's `/actuator/health` also asks Gmail for the label list, so it reports whether the app can do its job, not just whether it's running. Only the health endpoint is exposed, and it shows each check's status without error details.
 
 ## Production at gPanel
 
@@ -172,7 +177,7 @@ This is a local demo. For gPanel's Google Workspace customers I would change:
 
 - **Access:** a service account with domain-wide delegation, so the app can manage labels for users in a customer's Workspace domain without each user signing in.
 - **Secrets:** no key files on disk. Use Workload Identity where possible, and Secret Manager for anything that must be a secret.
-- **Hosting:** the backend on Cloud Run, with the built frontend served from the same origin, so still no CORS.
+- **Hosting:** the backend on Cloud Run, with the built frontend served from the same origin, so still no CORS. Cloud Run would use `/actuator/health` as its health probe.
 - **Users:** sign-in for our own API, and if users connect their own accounts, the web OAuth flow with each user's tokens stored encrypted.
 - **Operations:** structured logs and metrics for Gmail errors and latency, and retries with backoff for 429 and 5xx responses.
 

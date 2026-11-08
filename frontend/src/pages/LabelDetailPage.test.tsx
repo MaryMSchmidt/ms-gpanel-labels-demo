@@ -64,7 +64,7 @@ describe('LabelDetailPage', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Delete' }))
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }))
 
-    expect(await screen.findByRole('heading', { name: 'Gmail labels' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Gmail Label Manager' })).toBeInTheDocument()
     expect(screen.queryByText('Receipts')).not.toBeInTheDocument()
     // Only the first load: the deleted label is never fetched again.
     const detailGets = fetchMock.mock.calls.filter(([url, init]) => url === '/api/labels/Label_1' && init?.method === 'GET')
