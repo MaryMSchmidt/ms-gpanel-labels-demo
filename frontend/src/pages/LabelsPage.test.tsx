@@ -62,6 +62,12 @@ describe('LabelsPage', () => {
 
     expect(await screen.findByText('A label with this name already exists.')).toBeInTheDocument()
     expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    // Reopening starts clean: the old error and name are gone.
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    await userEvent.click(screen.getByRole('button', { name: 'New label' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Name')).toHaveValue('')
   })
 
   it('renames a label from the grid without opening the detail page', async () => {

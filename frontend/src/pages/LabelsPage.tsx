@@ -7,24 +7,17 @@ import { DataGrid, type GridColDef } from '@mui/x-data-grid'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { Label } from '../api/labels'
+import CreateLabelDialog from '../components/CreateLabelDialog'
 import DeleteLabelDialog from '../components/DeleteLabelDialog'
 import EditLabelDialog from '../components/EditLabelDialog'
-import LabelFormDialog from '../components/LabelFormDialog'
-import { useCreateLabel } from '../hooks/useCreateLabel'
 import { useLabels } from '../hooks/useLabels'
 
 function LabelsPage() {
   const { data, isPending, error } = useLabels()
-  const createLabel = useCreateLabel()
   const [isCreating, setIsCreating] = useState(false)
   const [editing, setEditing] = useState<Label | null>(null)
   const [deleting, setDeleting] = useState<Label | null>(null)
   const navigate = useNavigate()
-
-  const closeCreate = () => {
-    setIsCreating(false)
-    createLabel.reset()
-  }
 
   const columns: GridColDef<Label>[] = [
     { field: 'name', headerName: 'Name', flex: 1 },
@@ -84,15 +77,7 @@ function LabelsPage() {
           sx={{ '& .MuiDataGrid-row': { cursor: 'pointer' } }}
         />
       )}
-      {isCreating && (
-        <LabelFormDialog
-          title="New label"
-          isSubmitting={createLabel.isPending}
-          errorMessage={createLabel.error?.message}
-          onSubmit={(name) => createLabel.mutate(name, { onSuccess: closeCreate })}
-          onClose={closeCreate}
-        />
-      )}
+      {isCreating && <CreateLabelDialog onClose={() => setIsCreating(false)} />}
       {editing && <EditLabelDialog label={editing} onClose={() => setEditing(null)} />}
       {deleting && <DeleteLabelDialog label={deleting} onClose={() => setDeleting(null)} />}
     </Container>

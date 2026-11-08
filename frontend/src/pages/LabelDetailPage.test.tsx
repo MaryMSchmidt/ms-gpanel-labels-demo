@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { fakeBackend, inbox, jsonResponse, receipts, renderApp } from '../test/utils'
@@ -41,6 +41,20 @@ describe('LabelDetailPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(await screen.findByRole('heading', { name: 'Bills' })).toBeInTheDocument()
+  })
+
+  it('closes the dialogs on Cancel without changing anything', async () => {
+    const fetchMock = fakeBackend([receipts])
+    renderApp('/labels/Label_1')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(screen.getByRole('heading', { name: 'Receipts' })).toBeInTheDocument()
+    expect(fetchMock.mock.calls.every(([, init]) => init?.method === 'GET')).toBe(true)
   })
 
   it('goes back to the list after deleting', async () => {
