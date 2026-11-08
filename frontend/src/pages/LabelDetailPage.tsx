@@ -3,17 +3,21 @@ import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
 import Container from '@mui/material/Container'
 import Paper from '@mui/material/Paper'
+import Stack from '@mui/material/Stack'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
+import { useState } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
+import EditLabelDialog from '../components/EditLabelDialog'
 import { useLabel } from '../hooks/useLabel'
 
 function LabelDetailPage() {
   const { id = '' } = useParams()
   const { data: label, isPending, error } = useLabel(id)
+  const [isEditing, setIsEditing] = useState(false)
 
   return (
     <Container sx={{ py: 4 }}>
@@ -24,9 +28,14 @@ function LabelDetailPage() {
       {error && <Alert severity="error">{error.message}</Alert>}
       {label && (
         <>
-          <Typography variant="h4" component="h1" gutterBottom>
-            {label.name}
-          </Typography>
+          <Stack direction="row" sx={{ mb: 2, justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h4" component="h1">
+              {label.name}
+            </Typography>
+            <Button variant="outlined" disabled={label.type === 'system'} onClick={() => setIsEditing(true)}>
+              Edit
+            </Button>
+          </Stack>
           <Paper variant="outlined">
             <Table>
               <TableBody>
@@ -37,6 +46,7 @@ function LabelDetailPage() {
               </TableBody>
             </Table>
           </Paper>
+          {isEditing && <EditLabelDialog label={label} onClose={() => setIsEditing(false)} />}
         </>
       )}
     </Container>

@@ -39,3 +39,7 @@ export function fetchLabel(id: string): Promise<Label> {
 export function createLabel(name: string): Promise<Label> {
   return request('/api/labels', 'POST', { name })
 }
+
+export function updateLabel(id: string, name: string): Promise<Label> {
+  return request(`/api/labels/${encodeURIComponent(id)}`, 'PATCH', { name })
+}

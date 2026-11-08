@@ -37,4 +37,9 @@ public class LabelService {
                 .setMessageListVisibility("show");
         return LabelResponse.from(gmail.users().labels().create(CURRENT_USER, label).execute());
     }
+
+    public LabelResponse update(String id, LabelRequest request) throws IOException {
+        Label changes = new Label().setName(request.name().trim());
+        return LabelResponse.from(gmail.users().labels().patch(CURRENT_USER, id, changes).execute());
+    }
 }
