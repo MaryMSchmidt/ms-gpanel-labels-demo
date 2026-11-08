@@ -61,6 +61,24 @@ class LabelControllerTest {
     }
 
     @Test
+    void otherGmailErrorsReturn502() throws Exception {
+        when(labelService.list()).thenThrow(gmailError(429));
+
+        mockMvc.perform(get("/api/labels"))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.detail").value("Gmail request failed. Try again."));
+    }
+
+    @Test
+    void gmail400WithoutMessageUsesFallback() throws Exception {
+        when(labelService.get("bad-id")).thenThrow(gmailError(400));
+
+        mockMvc.perform(get("/api/labels/bad-id"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Gmail rejected the request."));
+    }
+
+    @Test
     void getReturnsLabel() throws Exception {
         when(labelService.get("Label_1")).thenReturn(RECEIPTS);
 
