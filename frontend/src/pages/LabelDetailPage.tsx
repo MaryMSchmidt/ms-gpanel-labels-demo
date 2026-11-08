@@ -24,7 +24,7 @@ function LabelDetailPage() {
 
   return (
     <Container sx={{ py: 4 }}>
-      <Button component={RouterLink} to="/" sx={{ mb: 2 }}>
+      <Button component={RouterLink} to="/" sx={{ mb: 2, color: 'common.white' }}>
         Back to labels
       </Button>
       {isPending && <CircularProgress />}
@@ -36,11 +36,11 @@ function LabelDetailPage() {
               {label.name}
             </Typography>
             <Stack direction="row" spacing={1}>
-              <Button variant="outlined" disabled={label.type === 'system'} onClick={() => setIsEditing(true)}>
+              <Button variant="contained" disabled={label.type === 'system'} onClick={() => setIsEditing(true)}>
                 Edit
               </Button>
               <Button
-                variant="outlined"
+                variant="contained"
                 color="error"
                 disabled={label.type === 'system'}
                 onClick={() => setIsDeleting(true)}

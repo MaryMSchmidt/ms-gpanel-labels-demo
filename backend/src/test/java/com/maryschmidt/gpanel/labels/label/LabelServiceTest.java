@@ -70,6 +70,14 @@ class LabelServiceTest {
     }
 
     @Test
+    void createReturnsTypeUserWhenGmailLeavesItOut() throws Exception {
+        when(gmail.users().labels().create(eq("me"), any(Label.class)).execute())
+                .thenReturn(new Label().setId("Label_2").setName("Invoices"));
+
+        assertThat(service().create(new LabelRequest("Invoices")).type()).isEqualTo("user");
+    }
+
+    @Test
     void updateSendsOnlyTheTrimmedName() throws Exception {
         when(gmail.users().labels().patch(eq("me"), eq("Label_1"), any(Label.class)).execute())
                 .thenReturn(receipts());

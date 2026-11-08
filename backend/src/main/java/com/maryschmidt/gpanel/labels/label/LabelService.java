@@ -35,7 +35,9 @@ public class LabelService {
                 .setName(request.name().trim())
                 .setLabelListVisibility("labelShow")
                 .setMessageListVisibility("show");
-        return LabelResponse.from(gmail.users().labels().create(CURRENT_USER, label).execute());
+        Label created = gmail.users().labels().create(CURRENT_USER, label).execute();
+        // Gmail leaves type out of the create response, and only user labels can be created.
+        return LabelResponse.from(created.setType("user"));
     }
 
     public LabelResponse update(String id, LabelRequest request) throws IOException {

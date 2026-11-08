@@ -6,14 +6,28 @@ A full-stack Gmail **label manager**: a React + Material UI frontend that talks 
 React (MUI) frontend  ->  Spring Boot REST API  ->  Google Gmail API
 ```
 
-> **Status:** in progress. The backend connects to Gmail; label endpoints and screens are added on feature branches.
+**What it does**
+
+- Lists the Gmail account's labels in a DataGrid, user labels first. Clicking a row opens that label's detail page (`/labels/:id`).
+- Creates, renames and deletes user labels. System labels such as INBOX and SENT are read-only, as they are in Gmail.
 
 ## Project structure
 
 ```
 ms-gpanel-labels-demo/
-├── backend/    Spring Boot 4 · Java 21 · Maven (wrapper included)
-└── frontend/   React 19 · TypeScript · Vite
+├── .github/workflows/ci.yml   Tests, coverage, lint and build on every pull request
+├── backend/                   Spring Boot 4 · Java 21 · Maven (wrapper included)
+│   ├── api.http               Ready-made requests for every endpoint
+│   └── src/main/java/com/maryschmidt/gpanel/labels/
+│       ├── config/            Gmail client, Google sign-in and the Gmail health check
+│       ├── label/             Controller, service, request and response records
+│       └── error/             Turns Gmail and validation errors into JSON responses
+└── frontend/                  React 19 · TypeScript · Vite · MUI
+    └── src/
+        ├── api/               fetch calls and the ApiError type
+        ├── hooks/             TanStack Query queries and mutations
+        ├── components/        Create, edit and delete dialogs
+        └── pages/             Labels grid, label detail, page not found
 ```
 
 ## Prerequisites
@@ -69,12 +83,14 @@ The variable lasts only for that terminal session, so set it again in a new term
 **First run:** a browser opens to Google sign-in.
 
 1. Sign in with your test Gmail account.
-2. Google shows "Google hasn't verified this app". This is expected for an app in Testing mode: click **Advanced**, then **Continue**.
-3. Click **Allow**. The browser confirms sign-in, and the backend finishes starting.
+2. Google shows "Google hasn't verified this app", with a note that you've been given access to it. This is expected for an app in Testing mode: click **Continue**.
+3. Google shows that the app will only be able to manage your Gmail labels. Click **Continue**. The browser confirms sign-in, and the backend finishes starting.
 
 The sign-in is saved in `backend/tokens/` (never committed), so later runs start without signing in. To sign in again or switch accounts, stop the backend and delete `backend/tokens/`.
 
 The backend runs on <http://localhost:8080>. Sign-in uses port 8888 for a moment, so both ports must be free.
+
+To check it's working, open <http://localhost:8080/actuator/health>. It shows `UP` when the backend is running and can reach Gmail.
 
 To call the API directly, open `backend/api.http` in VS Code with the REST Client extension and click **Send Request**.
 
@@ -98,6 +114,22 @@ npm run dev
 ```
 
 Open <http://localhost:5173>. The dev server forwards `/api` requests to the backend on port 8080, so no CORS setup is needed.
+
+## API
+
+All endpoints are under `/api/labels`. `POST` and `PATCH` take a JSON body: `{ "name": "Receipts" }`.
+
+| Method | Path | Success | Errors |
+|---|---|---|---|
+| `GET` | `/api/labels` | 200 with every label | |
+| `GET` | `/api/labels/{id}` | 200 with the label | 404 unknown id |
+| `POST` | `/api/labels` | 201 with the new label and a `Location` header | 400 blank or invalid name, 409 name already exists |
+| `PATCH` | `/api/labels/{id}` | 200 with the renamed label | 400 blank name or system label, 404 unknown id, 409 name already exists |
+| `DELETE` | `/api/labels/{id}` | 204, no body | 400 system label, 404 unknown id |
+
+Every error is a JSON [Problem Detail](https://www.rfc-editor.org/rfc/rfc9457) with a readable `detail` message. Any endpoint can also return 429 when Gmail is rate limiting, or 502 when Gmail fails or can't be reached.
+
+**Health check:** `GET /actuator/health` returns 200 with `"status": "UP"` when the app is running and Gmail answers, or 503 with `DOWN`. The `gmail` entry shows the Gmail check on its own; for example, it goes `DOWN` when the saved sign-in expires.
 
 ## Tests
 
@@ -124,27 +156,37 @@ npm run coverage
 
 **CI:** every pull request and every push to main runs both on GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): `./mvnw verify` for the backend, and lint, tests with coverage, and the build for the frontend.
 
+## Design decisions
+
+- **Local and single user.** The app signs in one Gmail account on the machine it runs on. Gmail is the only data store, so there's no database.
+- **Desktop OAuth with only the `gmail.labels` scope.** It's the simplest secure sign-in for a local app. The app can manage labels but can't read, send or delete mail (least privilege).
+- **Sign-in at startup.** If the credentials are missing or sign-in fails, the backend stops with a clear message instead of starting and failing on the first request. The trade-off is that the first start waits for sign-in.
+- **Thin layers.** The controller handles HTTP, the service talks to Gmail, and one `@RestControllerAdvice` turns errors into responses. The `LabelRequest` and `LabelResponse` records keep Google's model out of the API.
+- **PATCH for rename.** Only the name changes, so only the name is sent. The label's visibility settings stay as they are.
+- **Errors that mean something.** Gmail's 404 and 409 keep their status with a clearer message. Gmail's 400 is passed through with its own message, such as "Cannot update system label names". 429 stays 429 so a client knows to wait. Anything else becomes 502, because the problem is between the server and Gmail, not in the request.
+- **System labels are read-only.** The UI disables Edit and Delete for them, and the API returns Gmail's 400 if a request gets through anyway.
+- **Validation in both places.** The form blocks blank names for instant feedback. The API checks again, because it can't trust its callers.
+- **Predictable data on screen.** TanStack Query caches the list (`['labels']`) and each label (`['labels', id]`). Every change refreshes the list, so all screens stay in sync. 4xx errors aren't retried, because they won't fix themselves; server and network errors retry up to three times.
+- **One form for create and edit.** `LabelFormDialog` holds the form and its validation. `CreateLabelDialog` and `EditLabelDialog` only supply the title, the starting name and what Save does.
+- **A Vite proxy instead of CORS.** In development the browser only talks to `localhost:5173`, which forwards `/api` to the backend, so the backend needs no CORS setup.
+- **A health check that includes Gmail.** Spring Boot Actuator's `/actuator/health` also asks Gmail for the label list, so it reports whether the app can do its job, not just whether it's running. Only the health endpoint is exposed, and it shows each check's status without error details.
+
+## Production at gPanel
+
+This is a local demo. For gPanel's Google Workspace customers I would change:
+
+- **Access:** a service account with domain-wide delegation, so the app can manage labels for users in a customer's Workspace domain without each user signing in.
+- **Secrets:** no key files on disk. Use Workload Identity where possible, and Secret Manager for anything that must be a secret.
+- **Hosting:** the backend on Cloud Run, with the built frontend served from the same origin, so still no CORS. Cloud Run would use `/actuator/health` as its health probe.
+- **Users:** sign-in for our own API, and if users connect their own accounts, the web OAuth flow with each user's tokens stored encrypted.
+- **Operations:** structured logs and metrics for Gmail errors and latency, and retries with backoff for 429 and 5xx responses.
+
+## Next steps
+
+- Retry with backoff when Gmail returns 429.
+- Keyboard access to the detail page (today a row opens on click).
+- An end-to-end test with Playwright against a test Gmail account.
+
 ## Credentials and security
 
 Google OAuth credentials are **never committed**. The backend reads the `credentials.json` path from the `GMAIL_CREDENTIALS_PATH` environment variable and stops with a clear message if it's missing. `.gitignore` also blocks `credentials*.json`, `client_secret*.json`, OAuth `tokens/` and `.env` files as a safety net.
-
-## Roadmap
-
-### Backend (Spring Boot)
-
-- [x] Gmail API connection (credentials loaded from a local file or environment variable)
-- [x] List Gmail labels (`GET /api/labels`)
-- [x] Get a label by ID (`GET /api/labels/{id}`)
-- [x] Create a label (`POST /api/labels`)
-- [x] Update a label (`PATCH /api/labels/{id}`)
-- [x] Delete a label (`DELETE /api/labels/{id}`)
-
-### Frontend (React + TypeScript + Vite)
-
-Required libraries: MUI, TanStack Query, React Router (v6/v7), React Hook Form.
-
-- [x] List labels in a DataGrid
-- [x] Create a label
-- [x] Update a label
-- [x] Delete a label
-- [x] Navigate to a label detail route when a DataGrid row is clicked (`/labels/:id`)

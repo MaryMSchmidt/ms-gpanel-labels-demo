@@ -41,3 +41,6 @@ DELETE {{baseUrl}}/Label_999
 
 ### Delete a system label (expect 400 "Invalid delete request")
 DELETE {{baseUrl}}/CHAT
+
+### Health check (expect "UP", including "gmail")
+GET http://localhost:8080/actuator/health

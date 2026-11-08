@@ -33,6 +33,8 @@ public class ApiExceptionHandler {
             case 404 -> ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Label not found.");
             case 409 -> ProblemDetail.forStatusAndDetail(
                     HttpStatus.CONFLICT, "A label with this name already exists.");
+            case 429 -> ProblemDetail.forStatusAndDetail(
+                    HttpStatus.TOO_MANY_REQUESTS, "Gmail is busy. Try again in a moment.");
             default -> gmailFailed(e);
         };
     }

@@ -61,8 +61,17 @@ class LabelControllerTest {
     }
 
     @Test
-    void otherGmailErrorsReturn502() throws Exception {
+    void gmailRateLimitReturns429() throws Exception {
         when(labelService.list()).thenThrow(gmailError(429));
+
+        mockMvc.perform(get("/api/labels"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.detail").value("Gmail is busy. Try again in a moment."));
+    }
+
+    @Test
+    void otherGmailErrorsReturn502() throws Exception {
+        when(labelService.list()).thenThrow(gmailError(403));
 
         mockMvc.perform(get("/api/labels"))
                 .andExpect(status().isBadGateway())

@@ -18,6 +18,25 @@ describe('LabelsPage', () => {
     expect(within(row('Receipts')).getByRole('button', { name: 'Edit' })).toBeEnabled()
   })
 
+  it('explains that system labels are read-only', async () => {
+    fakeBackend([inbox])
+    renderApp('/')
+
+    expect(
+      screen.getByText('System labels are maintained by Gmail and cannot be modified or deleted.'),
+    ).toBeInTheDocument()
+  })
+
+  it('lists user labels first, then system labels, each A to Z', async () => {
+    const zeta = { ...receipts, id: 'Label_2', name: 'Zeta' }
+    fakeBackend([zeta, inbox, receipts, { ...inbox, id: 'SENT', name: 'SENT' }])
+    renderApp('/')
+
+    await screen.findByText('Zeta')
+    const names = screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('gridcell')[0].textContent)
+    expect(names).toEqual(['Receipts', 'Zeta', 'INBOX', 'SENT'])
+  })
+
   it('shows the error when labels fail to load', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(502, { detail: 'Gmail request failed. Try again.' })))
     renderApp('/')
@@ -62,6 +81,12 @@ describe('LabelsPage', () => {
 
     expect(await screen.findByText('A label with this name already exists.')).toBeInTheDocument()
     expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    // Reopening starts clean: the old error and name are gone.
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    await userEvent.click(screen.getByRole('button', { name: 'New label' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Name')).toHaveValue('')
   })
 
   it('renames a label from the grid without opening the detail page', async () => {
@@ -76,7 +101,7 @@ describe('LabelsPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(await screen.findByText('Bills')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Gmail labels' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Gmail Label Manager' })).toBeInTheDocument()
   })
 
   it('deletes a label only after confirming', async () => {
@@ -91,6 +116,6 @@ describe('LabelsPage', () => {
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }))
 
     await waitFor(() => expect(screen.queryByText('Receipts')).not.toBeInTheDocument())
-    expect(screen.getByRole('heading', { name: 'Gmail labels' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Gmail Label Manager' })).toBeInTheDocument()
   })
 })

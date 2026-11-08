@@ -4,27 +4,29 @@ import Container from '@mui/material/Container'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { Label } from '../api/labels'
+import CreateLabelDialog from '../components/CreateLabelDialog'
 import DeleteLabelDialog from '../components/DeleteLabelDialog'
 import EditLabelDialog from '../components/EditLabelDialog'
-import LabelFormDialog from '../components/LabelFormDialog'
-import { useCreateLabel } from '../hooks/useCreateLabel'
 import { useLabels } from '../hooks/useLabels'
+
+// User labels first, then system labels, each A to Z. Clicking a column header sorts by that column instead.
+function userLabelsFirst(a: Label, b: Label) {
+  if (a.type !== b.type) {
+    return a.type === 'user' ? -1 : 1
+  }
+  return a.name.localeCompare(b.name)
+}
 
 function LabelsPage() {
   const { data, isPending, error } = useLabels()
-  const createLabel = useCreateLabel()
   const [isCreating, setIsCreating] = useState(false)
   const [editing, setEditing] = useState<Label | null>(null)
   const [deleting, setDeleting] = useState<Label | null>(null)
   const navigate = useNavigate()
-
-  const closeCreate = () => {
-    setIsCreating(false)
-    createLabel.reset()
-  }
+  const rows = useMemo(() => [...(data ?? [])].sort(userLabelsFirst), [data])
 
   const columns: GridColDef<Label>[] = [
     { field: 'name', headerName: 'Name', flex: 1 },
@@ -65,9 +67,14 @@ function LabelsPage() {
   return (
     <Container sx={{ py: 4 }}>
       <Stack direction="row" sx={{ mb: 2, justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" component="h1">
-          Gmail labels
-        </Typography>
+        <div>
+          <Typography variant="h4" component="h1">
+            Gmail Label Manager
+          </Typography>
+          <Typography sx={{ color: 'common.white', mt: 0.5 }}>
+            System labels are maintained by Gmail and cannot be modified or deleted.
+          </Typography>
+        </div>
         <Button variant="contained" onClick={() => setIsCreating(true)}>
           New label
         </Button>
@@ -76,23 +83,21 @@ function LabelsPage() {
         <Alert severity="error">{error.message}</Alert>
       ) : (
         <DataGrid
-          rows={data ?? []}
+          rows={rows}
           columns={columns}
           loading={isPending}
           autoHeight
           onRowClick={(params) => navigate(`/labels/${encodeURIComponent(params.row.id)}`)}
-          sx={{ '& .MuiDataGrid-row': { cursor: 'pointer' } }}
+          sx={{
+            bgcolor: 'background.paper',
+            '& .MuiDataGrid-columnHeaders, & .MuiDataGrid-columnHeader, & .MuiDataGrid-footerContainer': {
+              bgcolor: 'primary.main',
+            },
+            '& .MuiDataGrid-row': { cursor: 'pointer' },
+          }}
         />
       )}
-      {isCreating && (
-        <LabelFormDialog
-          title="New label"
-          isSubmitting={createLabel.isPending}
-          errorMessage={createLabel.error?.message}
-          onSubmit={(name) => createLabel.mutate(name, { onSuccess: closeCreate })}
-          onClose={closeCreate}
-        />
-      )}
+      {isCreating && <CreateLabelDialog onClose={() => setIsCreating(false)} />}
       {editing && <EditLabelDialog label={editing} onClose={() => setEditing(null)} />}
       {deleting && <DeleteLabelDialog label={deleting} onClose={() => setDeleting(null)} />}
     </Container>
