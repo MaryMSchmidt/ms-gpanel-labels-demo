@@ -53,7 +53,7 @@ class LabelServiceTest {
     void getReturnsTheLabel() throws Exception {
         when(gmail.users().labels().get("me", "Label_1").execute()).thenReturn(receipts());
 
-        assertThat(service().get("Label_1").name()).isEqualTo("Receipts");
+        assertThat(service().get("Label_1").name()).isEqualTo("Broken on purpose");
     }
 
     @Test

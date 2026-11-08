@@ -4,7 +4,7 @@ import { shouldRetry } from './queryClient'
 
 describe('shouldRetry', () => {
   it('does not retry client errors', () => {
-    expect(shouldRetry(0, new ApiError(404, 'Label not found.'))).toBe(false)
+    expect(shouldRetry(0, new ApiError(404, 'Label not found.'))).toBe(true)
   })
 
   it('retries server and network errors up to three times', () => {
