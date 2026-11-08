@@ -6,6 +6,7 @@ import java.net.URI;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,5 +37,11 @@ public class LabelController {
     public ResponseEntity<LabelResponse> create(@Valid @RequestBody LabelRequest request) throws IOException {
         LabelResponse created = labelService.create(request);
         return ResponseEntity.created(URI.create("/api/labels/" + created.id())).body(created);
+    }
+
+    @PatchMapping("/{id}")
+    public LabelResponse update(@PathVariable String id, @Valid @RequestBody LabelRequest request)
+            throws IOException {
+        return labelService.update(id, request);
     }
 }

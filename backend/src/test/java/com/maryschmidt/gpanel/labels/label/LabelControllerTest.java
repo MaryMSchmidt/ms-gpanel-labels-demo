@@ -3,11 +3,13 @@ package com.maryschmidt.gpanel.labels.label;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpResponseException;
@@ -102,8 +104,62 @@ class LabelControllerTest {
                 .andExpect(jsonPath("$.detail").value("A label with this name already exists."));
     }
 
+    @Test
+    void updateReturnsRenamedLabel() throws Exception {
+        when(labelService.update("Label_1", new LabelRequest("Bills")))
+                .thenReturn(new LabelResponse("Label_1", "Bills", "user", "show", "labelShow"));
+
+        mockMvc.perform(patch("/api/labels/Label_1").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Bills\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Bills"));
+    }
+
+    @Test
+    void updateReturns400WhenNameIsBlank() throws Exception {
+        mockMvc.perform(patch("/api/labels/Label_1").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Name is required."));
+
+        verifyNoInteractions(labelService);
+    }
+
+    @Test
+    void updateReturns404WhenLabelDoesNotExist() throws Exception {
+        when(labelService.update("Label_999", new LabelRequest("Bills"))).thenThrow(gmailError(404));
+
+        mockMvc.perform(patch("/api/labels/Label_999").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Bills\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void updateReturns400WithGmailMessageForSystemLabel() throws Exception {
+        when(labelService.update("INBOX", new LabelRequest("Bills")))
+                .thenThrow(gmailError(400, "Cannot update system label names"));
+
+        mockMvc.perform(patch("/api/labels/INBOX").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Bills\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Cannot update system label names"));
+    }
+
+    @Test
+    void updateReturns409WhenNameExists() throws Exception {
+        when(labelService.update("Label_1", new LabelRequest("Receipts"))).thenThrow(gmailError(409));
+
+        mockMvc.perform(patch("/api/labels/Label_1").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Receipts\"}"))
+                .andExpect(status().isConflict());
+    }
+
     private static GoogleJsonResponseException gmailError(int status) {
+        return gmailError(status, null);
+    }
+
+    private static GoogleJsonResponseException gmailError(int status, String message) {
+        GoogleJsonError details = null;
+        if (message != null) {
+            details = new GoogleJsonError();
+            details.setMessage(message);
+        }
         return new GoogleJsonResponseException(
-                new HttpResponseException.Builder(status, null, new HttpHeaders()), null);
+                new HttpResponseException.Builder(status, null, new HttpHeaders()), details);
     }
 }

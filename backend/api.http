@@ -20,3 +20,15 @@ POST {{baseUrl}}
 Content-Type: application/json
 
 { "name": " " }
+
+### Rename a label (replace the id with one of your own labels from the list)
+PATCH {{baseUrl}}/Label_5
+Content-Type: application/json
+
+{ "name": "API test label renamed" }
+
+### Rename a system label (expect 400 "Cannot update system label names")
+PATCH {{baseUrl}}/INBOX
+Content-Type: application/json
+
+{ "name": "My inbox" }

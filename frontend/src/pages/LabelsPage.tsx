@@ -7,25 +7,45 @@ import { DataGrid, type GridColDef } from '@mui/x-data-grid'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { Label } from '../api/labels'
+import EditLabelDialog from '../components/EditLabelDialog'
 import LabelFormDialog from '../components/LabelFormDialog'
 import { useCreateLabel } from '../hooks/useCreateLabel'
 import { useLabels } from '../hooks/useLabels'
-
-const columns: GridColDef<Label>[] = [
-  { field: 'name', headerName: 'Name', flex: 1 },
-  { field: 'type', headerName: 'Type', width: 120 },
-]
 
 function LabelsPage() {
   const { data, isPending, error } = useLabels()
   const createLabel = useCreateLabel()
   const [isCreating, setIsCreating] = useState(false)
+  const [editing, setEditing] = useState<Label | null>(null)
   const navigate = useNavigate()
 
   const closeCreate = () => {
     setIsCreating(false)
     createLabel.reset()
   }
+
+  const columns: GridColDef<Label>[] = [
+    { field: 'name', headerName: 'Name', flex: 1 },
+    { field: 'type', headerName: 'Type', width: 120 },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 120,
+      sortable: false,
+      renderCell: ({ row }) => (
+        <Button
+          size="small"
+          disabled={row.type === 'system'}
+          onClick={(event) => {
+            event.stopPropagation()
+            setEditing(row)
+          }}
+        >
+          Edit
+        </Button>
+      ),
+    },
+  ]
 
   return (
     <Container sx={{ py: 4 }}>
@@ -58,6 +78,7 @@ function LabelsPage() {
           onClose={closeCreate}
         />
       )}
+      {editing && <EditLabelDialog label={editing} onClose={() => setEditing(null)} />}
     </Container>
   )
 }
