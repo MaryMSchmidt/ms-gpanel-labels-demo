@@ -42,4 +42,8 @@ public class LabelService {
         Label changes = new Label().setName(request.name().trim());
         return LabelResponse.from(gmail.users().labels().patch(CURRENT_USER, id, changes).execute());
     }
+
+    public void delete(String id) throws IOException {
+        gmail.users().labels().delete(CURRENT_USER, id).execute();
+    }
 }

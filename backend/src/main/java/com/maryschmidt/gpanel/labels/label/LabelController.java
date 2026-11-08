@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,5 +44,11 @@ public class LabelController {
     public LabelResponse update(@PathVariable String id, @Valid @RequestBody LabelRequest request)
             throws IOException {
         return labelService.update(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable String id) throws IOException {
+        labelService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

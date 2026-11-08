@@ -1,7 +1,10 @@
 package com.maryschmidt.gpanel.labels.label;
 
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -147,6 +150,32 @@ class LabelControllerTest {
 
         mockMvc.perform(patch("/api/labels/Label_1").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Receipts\"}"))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void deleteReturns204() throws Exception {
+        mockMvc.perform(delete("/api/labels/Label_1"))
+                .andExpect(status().isNoContent());
+
+        verify(labelService).delete("Label_1");
+    }
+
+    @Test
+    void deleteReturns404WhenLabelDoesNotExist() throws Exception {
+        doThrow(gmailError(404)).when(labelService).delete("Label_999");
+
+        mockMvc.perform(delete("/api/labels/Label_999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Label not found."));
+    }
+
+    @Test
+    void deleteReturns400WithGmailMessageForSystemLabel() throws Exception {
+        doThrow(gmailError(400, "Invalid delete request")).when(labelService).delete("INBOX");
+
+        mockMvc.perform(delete("/api/labels/INBOX"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Invalid delete request"));
     }
 
     private static GoogleJsonResponseException gmailError(int status) {
