@@ -25,6 +25,9 @@ async function request<T>(url: string, method = 'GET', body?: unknown): Promise<
     const problem = await response.json().catch(() => null)
     throw new ApiError(response.status, problem?.detail ?? `Request failed (HTTP ${response.status})`)
   }
+  if (response.status === 204) {
+    return undefined as T
+  }
   return response.json()
 }
 
@@ -42,4 +45,8 @@ export function createLabel(name: string): Promise<Label> {
 
 export function updateLabel(id: string, name: string): Promise<Label> {
   return request(`/api/labels/${encodeURIComponent(id)}`, 'PATCH', { name })
+}
+
+export function deleteLabel(id: string): Promise<void> {
+  return request(`/api/labels/${encodeURIComponent(id)}`, 'DELETE')
 }

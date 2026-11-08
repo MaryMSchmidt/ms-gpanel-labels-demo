@@ -32,3 +32,12 @@ PATCH {{baseUrl}}/INBOX
 Content-Type: application/json
 
 { "name": "My inbox" }
+
+### Delete a label (expect 204; replace the id with one of your own labels from the list)
+DELETE {{baseUrl}}/Label_5
+
+### Delete a label that doesn't exist (expect 404)
+DELETE {{baseUrl}}/Label_999
+
+### Delete a system label (expect 400 "Invalid delete request")
+DELETE {{baseUrl}}/CHAT

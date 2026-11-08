@@ -119,7 +119,7 @@ Google OAuth credentials are **never committed**. The backend reads the `credent
 - [x] Get a label by ID (`GET /api/labels/{id}`)
 - [x] Create a label (`POST /api/labels`)
 - [x] Update a label (`PATCH /api/labels/{id}`)
-- [ ] Delete a label
+- [x] Delete a label (`DELETE /api/labels/{id}`)
 
 ### Frontend (React + TypeScript + Vite)
 
@@ -128,5 +128,5 @@ Required libraries: MUI, TanStack Query, React Router (v6/v7), React Hook Form.
 - [x] List labels in a DataGrid
 - [x] Create a label
 - [x] Update a label
-- [ ] Delete a label
+- [x] Delete a label
 - [x] Navigate to a label detail route when a DataGrid row is clicked (`/labels/:id`)
